@@ -5,11 +5,18 @@ import * as THREE from 'three'
 import Grass from './Grass.jsx'
 import Stones from './Stones.jsx'
 import useStore from '../stores/useStore.jsx'
-import { generateChunkStones } from './stoneUtils.js'
+import { generateChunkStones } from './utils/stoneUtils.js'
 
 export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrainMaterial, grassMaterial, stoneMaterial, stoneGeometry }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
     const stoneParameters = useStore((s) => s.stoneParameters)
+    // This helps us re-render the stones mesh when the stone parameters change, otherwise we will se the
+    // effect on the grass, but not on stones
+    const stonesKey = useMemo(
+        () =>
+            `stones_${x}_${z}_${stoneParameters.count}_${stoneParameters.minScale}_${stoneParameters.maxScale}_${stoneParameters.yOffset}_${stoneParameters.noiseScale}_${stoneParameters.noiseThreshold}`,
+        [x, z, stoneParameters.count, stoneParameters.minScale, stoneParameters.maxScale, stoneParameters.yOffset, stoneParameters.noiseScale, stoneParameters.noiseThreshold]
+    )
 
     const stoneField = useMemo(() => {
         const capacity = 500 // keep instancedMesh capacity stable to avoid recreate/dispose glitches
@@ -66,7 +73,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrai
         stoneParameters.yOffset,
         stoneParameters.noiseScale,
         stoneParameters.noiseThreshold,
-        noise2D,
+        noise2D, // This dependency is what causes regeneration if noise2D changes
         x,
         z,
         size,
@@ -127,7 +134,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrai
                 grassMaterial={grassMaterial}
             />
 
-            <Stones stones={stoneField.currentStones} maxCount={stoneField.capacity} stoneMaterial={stoneMaterial} stoneGeometry={stoneGeometry} />
+            <Stones key={stonesKey} stones={stoneField.currentStones} maxCount={stoneField.capacity} stoneMaterial={stoneMaterial} stoneGeometry={stoneGeometry} />
         </group>
     )
 }

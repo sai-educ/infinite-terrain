@@ -28,8 +28,8 @@ const useStore = create(
          * Terrain parameters
          */
         terrainParameters: {
-            color: '#3f5553', //#8d7d7d //#0c292e //#244462 //#3d3380 //908343 //#77863a //#3f5553 //#766840
-            backgroundColor: '#203a3b', //#a38d8d //#0c1521 //#171c38 //#1b1738 //9a9065 //#5f9eb0 //#203a3b //#554832
+            color: '#3f5553',
+            backgroundColor: '#203a3b',
             chunkSize: 10,
             segments: 16,
             scale: 0.05,
@@ -67,8 +67,8 @@ const useStore = create(
          * Grass parameters
          */
         grassParameters: {
-            colorBase: '#396c18', //#375da0 //#044537 #6f4108 //669019 //#396c18 //#624c1e
-            colorTop: '#77aa1a', //#6280a0 //#0d655b #c17c05 //acc125 //#77aa1a //#eb9538
+            colorBase: '#396c18',
+            colorTop: '#77aa1a',
             count: 2500,
             segmentsCount: 4,
             width: 0.15,
@@ -135,7 +135,7 @@ const useStore = create(
          * Ball parameters
          */
         ballParameters: {
-            color: '#c7442d', // #3b2ec7 #c7442d
+            color: '#582ec7', // Changed from red to purple/blue-ish by default
         },
         setBallParameters: (parameters) => {
             set({ ballParameters: parameters })
@@ -162,15 +162,15 @@ const useStore = create(
         /**
          * Theme
          */
-        theme: 'light',
+        theme: 'dark', // Set default theme to 'dark'
         setTheme: (theme) => {
             const themes = {
                 dark: {
-                    terrain: '#3d3380',
-                    background: '#1b1738',
-                    grassBase: '#6f4108',
-                    grassTop: '#c17c05',
-                    ball: '#3b2ec7',
+                    terrain: '#3f5553',
+                    background: '#203a3b',
+                    grassBase: '#396c18',
+                    grassTop: '#77aa1a',
+                    ball: '#582ec7',
                 },
                 light: {
                     terrain: '#908343',

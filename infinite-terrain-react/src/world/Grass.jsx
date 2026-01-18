@@ -2,7 +2,8 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 
 import useStore from '../stores/useStore.jsx'
-import { mulberry32, smoothstep } from './stoneUtils.js'
+import { mulberry32 } from './utils/randomUtils.js'
+import { smoothstep } from './utils/stoneUtils.js'
 
 export default function Grass({ size, chunkX, chunkZ, chunkIndexX, chunkIndexZ, noise2D, scale, amplitude, stones, grassMaterial }) {
     const grassParameters = useStore((s) => s.grassParameters)
@@ -97,7 +98,6 @@ export default function Grass({ size, chunkX, chunkZ, chunkIndexX, chunkIndexZ, 
                 const dx = x - fp.x
                 const dz = z - fp.z
 
-                // Normalized distance^2 in an axis-aligned ellipse (fast).
                 const distSqN = dx * dx * fp.invSx2 + dz * dz * fp.invSz2
                 if (distSqN >= fp.endSq) continue
 

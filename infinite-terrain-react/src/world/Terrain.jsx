@@ -8,6 +8,7 @@ import { gsap } from 'gsap'
 import TerrainChunk from './TerrainChunk.jsx'
 import useStore from '../stores/useStore.jsx'
 import usePhases, { PHASES } from '../stores/usePhases.jsx'
+import { mulberry32 } from './utils/randomUtils.js'
 
 import noiseTextureURL from '/textures/noiseTexture.png'
 import terrainVertexShader from '../shaders/terrain/vertex.glsl'
@@ -16,6 +17,9 @@ import grassVertexShader from '../shaders/grass/vertex.glsl'
 import grassFragmentShader from '../shaders/grass/fragment.glsl'
 import stonesVertexShader from '../shaders/stones/vertex.glsl'
 import stonesFragmentShader from '../shaders/stones/fragment.glsl'
+
+const WORLD_NOISE_SEED = 1337
+const sharedNoise2D = createNoise2D(mulberry32(WORLD_NOISE_SEED))
 
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
@@ -34,8 +38,8 @@ export default function Terrain() {
     const setBorderParameters = useStore((s) => s.setBorderParameters)
     const phase = usePhases((s) => s.phase)
 
-    // Noise generator
-    const noise2D = useMemo(() => createNoise2D(), [])
+    // Noise generator (stable across parameter changes and remounts)
+    const noise2D = sharedNoise2D
 
     // Noise texture
     const noiseTexture = useTexture(

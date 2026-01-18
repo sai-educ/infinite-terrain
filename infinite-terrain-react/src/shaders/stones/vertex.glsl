@@ -51,5 +51,3 @@ void main() {
   vec4 mvPosition = viewMatrix * worldPosition;
   gl_Position = projectionMatrix * mvPosition;
 }
-
-

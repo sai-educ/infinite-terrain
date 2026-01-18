@@ -16,13 +16,14 @@ export default function BallTrailCanvas() {
     const currentPosRef = useRef(new THREE.Vector3())
     const movementDeltaRef = useRef(new THREE.Vector3())
 
+    // 1. Create Canvas & Texture once
     useEffect(() => {
         const canvas = document.createElement('canvas')
         canvas.width = trailParameters.chunkSize
         canvas.height = trailParameters.chunkSize
         canvas.style.position = 'fixed'
-        canvas.style.width = `${256}px`
-        canvas.style.height = `${256}px`
+        canvas.style.width = '256px'
+        canvas.style.height = '256px'
         canvas.style.left = '0'
         canvas.style.bottom = '0'
         canvas.style.zIndex = '10'
@@ -48,25 +49,35 @@ export default function BallTrailCanvas() {
 
         setTrailTexture(texture)
 
+        // Cleanup
         return () => {
             setTrailTexture(null)
             texture.dispose()
-            canvas.remove()
+            if (document.body.contains(canvas)) {
+                document.body.removeChild(canvas)
+            }
+            // Clear refs
+            canvasRef.current = null
+            textureRef.current = null
+            ctxRef.current = null
+            glowImageRef.current = null
         }
-    }, [setTrailTexture, trailParameters.chunkSize])
+    }, [trailParameters.chunkSize]) // Only recreate if size changes
 
-    // Update canvas visibility
+    // 2. Update existing canvas visibility without recreating
     useEffect(() => {
         if (canvasRef.current) {
             canvasRef.current.style.display = trailParameters.showCanvas ? 'block' : 'none'
         }
     }, [trailParameters.showCanvas])
 
+    // 3. Render Loop
     useFrame(() => {
         const canvas = canvasRef.current
         const ctx = ctxRef.current
         const glowImage = glowImageRef.current
         const texture = textureRef.current
+
         if (!canvas || !ctx || !glowImage || !texture) return
 
         const ballPosition = useStore.getState().ballPosition
@@ -94,7 +105,6 @@ export default function BallTrailCanvas() {
         const centerY = canvas.height * 0.5
 
         if (movementDistance > 0.001) {
-            // Avoid drawing if movement is too small
             ctx.save()
             ctx.globalCompositeOperation = 'copy'
             ctx.drawImage(canvas, canvasDeltaX, canvasDeltaY)
@@ -109,16 +119,17 @@ export default function BallTrailCanvas() {
         let alpha = trailParameters.glowAlpha
 
         if (landBallDistance > 0.05) {
-            // maybe adjust it later with the ball size
             const t = landBallDistance - 0.05
             alpha *= 1.0 - t
         }
 
         const glowSize = canvas.width * trailParameters.glowSize
 
-        ctx.globalCompositeOperation = 'lighten'
-        ctx.globalAlpha = alpha
-        ctx.drawImage(glowImage, centerX - glowSize * 0.5, centerY - glowSize * 0.5, glowSize, glowSize)
+        if (glowImage.complete && glowImage.naturalHeight !== 0) {
+            ctx.globalCompositeOperation = 'lighten'
+            ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
+            ctx.drawImage(glowImage, centerX - glowSize * 0.5, centerY - glowSize * 0.5, glowSize, glowSize)
+        }
 
         ctx.globalCompositeOperation = 'destination-over'
         ctx.globalAlpha = 1

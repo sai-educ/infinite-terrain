@@ -1,5 +1,4 @@
-import { useMemo, useEffect } from 'react'
-import * as THREE from 'three'
+import { useMemo } from 'react'
 import { InstancedRigidBodies } from '@react-three/rapier'
 
 export default function Stones({ stones, maxCount, stoneMaterial, stoneGeometry }) {
@@ -13,20 +12,12 @@ export default function Stones({ stones, maxCount, stoneMaterial, stoneGeometry 
         }))
     }, [stones])
 
-    // If no stones, we can render nothing. But we usually keep the mesh mounted with count=0.
-    // InstancedRigidBodies manages the instanceMatrix of the child instancedMesh.
-    // If instances array is empty, it should handle it gracefully or we render nothing.
-
     if (!instances || instances.length === 0) {
         return null
     }
 
     return (
-        <InstancedRigidBodies
-            instances={instances}
-            type="fixed"
-            colliders="hull" // Optimized: "hull" is much faster/stable than "trimesh" for convex shapes
-        >
+        <InstancedRigidBodies instances={instances} type="fixed" colliders="hull">
             <instancedMesh args={[stoneGeometry, stoneMaterial, maxCount]} count={instances.length} frustumCulled={false} />
         </InstancedRigidBodies>
     )
