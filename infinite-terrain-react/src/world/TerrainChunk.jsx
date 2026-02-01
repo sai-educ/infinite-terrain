@@ -4,14 +4,34 @@ import * as THREE from 'three'
 
 import Grass from './Grass.jsx'
 import Stones from './Stones.jsx'
+import Trees from './Trees.jsx'
 import useStore from '../stores/useStore.jsx'
 import { generateChunkStones } from './utils/stoneUtils.js'
 
-export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrainMaterial, grassMaterial, stoneMaterial, stoneGeometry }) {
+export default function TerrainChunk({
+    x,
+    z,
+    size,
+    noise2D,
+    noiseTexture,
+    terrainMaterial,
+    grassMaterial,
+    stoneMaterial,
+    stoneGeometry,
+    leavesMaterial,
+    trunkMaterial,
+    treeScene,
+}) {
     const terrainParameters = useStore((s) => s.terrainParameters)
     const stoneParameters = useStore((s) => s.stoneParameters)
-    // This helps us re-render the stones mesh when the stone parameters change, otherwise we will se the
-    // effect on the grass, but not on stones
+
+    const treePosition = useMemo(() => {
+        const worldX = x * size
+        const worldZ = z * size
+        const height = noise2D(worldX * terrainParameters.scale, worldZ * terrainParameters.scale) * terrainParameters.amplitude
+        return [0, height, 0]
+    }, [x, z, size, noise2D, terrainParameters.scale, terrainParameters.amplitude])
+
     const stonesKey = useMemo(
         () =>
             `stones_${x}_${z}_${stoneParameters.count}_${stoneParameters.minScale}_${stoneParameters.maxScale}_${stoneParameters.yOffset}_${stoneParameters.noiseScale}_${stoneParameters.noiseThreshold}`,
@@ -19,100 +39,45 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrai
     )
 
     const stoneField = useMemo(() => {
-        const capacity = 500 // keep instancedMesh capacity stable to avoid recreate/dispose glitches
-
-        // 1. Generate stones for THIS chunk (for rendering)
+        const capacity = 500
         const current = generateChunkStones(x, z, size, noise2D, stoneParameters, terrainParameters)
-
-        // 2. Generate stones for 8 NEIGHBORS (for grass suppression at borders)
-        // Pass skipMatrices=true to save performance
         const neighbors = []
+
         for (let dx = -1; dx <= 1; dx++) {
             for (let dz = -1; dz <= 1; dz++) {
-                if (dx === 0 && dz === 0) continue // skip self
+                if (dx === 0 && dz === 0) continue
 
-                const neighborStones = generateChunkStones(
-                    x + dx,
-                    z + dz,
-                    size,
-                    noise2D,
-                    stoneParameters,
-                    terrainParameters,
-                    true, // skipMatrices
-                    true // minimalData (skip height/rotation calc)
-                ).stones
-
-                // Adjust neighbor stone positions to be relative to THIS chunk's center
-                // Neighbor local X is relative to neighbor center.
-                // Neighbor center is (dx * size, dz * size) away from current center.
-                // So adjusted local pos = neighborLocal + (dx * size, dz * size)
+                const neighborStones = generateChunkStones(x + dx, z + dz, size, noise2D, stoneParameters, terrainParameters, true, true).stones
                 for (const s of neighborStones) {
-                    neighbors.push({
-                        ...s,
-                        x: s.x + dx * size,
-                        z: s.z + dz * size,
-                    })
+                    neighbors.push({ ...s, x: s.x + dx * size, z: s.z + dz * size })
                 }
             }
         }
 
-        // Combine current stones + neighbor stones for grass suppression
-        const allStonesForGrass = [...current.stones, ...neighbors]
-
         return {
             instances: current.instances,
-            stones: allStonesForGrass,
-            currentStones: current.stones, // Pass raw data of current stones for physics
+            stones: [...current.stones, ...neighbors],
+            currentStones: current.stones,
             capacity,
         }
-    }, [
-        stoneParameters.enabled,
-        stoneParameters.count,
-        stoneParameters.minScale,
-        stoneParameters.maxScale,
-        stoneParameters.yOffset,
-        stoneParameters.noiseScale,
-        stoneParameters.noiseThreshold,
-        noise2D, // This dependency is what causes regeneration if noise2D changes
-        x,
-        z,
-        size,
-        terrainParameters.scale,
-        terrainParameters.amplitude,
-    ])
+    }, [stoneParameters, noise2D, x, z, size, terrainParameters.scale, terrainParameters.amplitude])
 
-    // Geometry
     const geometry = useMemo(() => {
-        const segments = terrainParameters.segments
-        const scale = terrainParameters.scale
-        const amplitude = terrainParameters.amplitude
-
+        const { segments, scale, amplitude } = terrainParameters
         const geo = new THREE.PlaneGeometry(size, size, segments, segments)
         const posAttribute = geo.attributes.position
-
         const chunkWorldX = x * size
         const chunkWorldZ = z * size
 
         for (let i = 0; i < posAttribute.count; i++) {
-            const px = posAttribute.getX(i)
-            const py = posAttribute.getY(i)
-
-            const worldX = px + chunkWorldX
-            const worldZ = -py + chunkWorldZ
-
-            const heightVal = noise2D(worldX * scale, worldZ * scale) * amplitude
-
-            posAttribute.setZ(i, heightVal)
+            const worldX = posAttribute.getX(i) + chunkWorldX
+            const worldZ = -posAttribute.getY(i) + chunkWorldZ
+            posAttribute.setZ(i, noise2D(worldX * scale, worldZ * scale) * amplitude)
         }
-
         return geo
     }, [noise2D, size, x, z, terrainParameters])
 
-    useEffect(() => {
-        return () => {
-            geometry.dispose()
-        }
-    }, [geometry])
+    useEffect(() => () => geometry.dispose(), [geometry])
 
     return (
         <group position={[x * size, 0, z * size]}>
@@ -135,6 +100,8 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrai
             />
 
             <Stones key={stonesKey} stones={stoneField.currentStones} maxCount={stoneField.capacity} stoneMaterial={stoneMaterial} stoneGeometry={stoneGeometry} />
+
+            <Trees position={treePosition} leavesMaterial={leavesMaterial} trunkMaterial={trunkMaterial} treeScene={treeScene} />
         </group>
     )
 }

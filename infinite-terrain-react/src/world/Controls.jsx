@@ -6,6 +6,7 @@ export default function Controls() {
     const borderParameters = useStore((state) => state.borderParameters)
     const ditheringParameters = useStore((state) => state.ditheringParameters)
     const grassParameters = useStore((state) => state.grassParameters)
+    const windParameters = useStore((state) => state.windParameters)
     const stoneParameters = useStore((state) => state.stoneParameters)
     const treeParameters = useStore((state) => state.treeParameters)
     const trailParameters = useStore((state) => state.trailParameters)
@@ -201,26 +202,39 @@ export default function Controls() {
             value: grassParameters.sobelMode === 2.0 ? '8 tap Sobel' : grassParameters.sobelMode === 1.0 ? '4 tap central difference' : '2 tap approximation',
             onChange: (value) => setParam('grassParameters', 'sobelMode')(value === '8 tap Sobel' ? 2.0 : value === '4 tap central difference' ? 1.0 : 0.0),
         },
-        wScale: {
-            value: grassParameters.windScale,
+    })
+
+    /**
+     * Wind parameters
+     */
+    useControls('Wind', {
+        direction: {
+            value: windParameters.direction,
+            min: 0,
+            max: Math.PI * 2,
+            step: 0.01,
+            onChange: setParam('windParameters', 'direction'),
+        },
+        strength: {
+            value: windParameters.strength,
+            min: 0,
+            max: 1.5,
+            step: 0.01,
+            onChange: setParam('windParameters', 'strength'),
+        },
+        speed: {
+            value: windParameters.speed,
+            min: 0,
+            max: 2.5,
+            step: 0.01,
+            onChange: setParam('windParameters', 'speed'),
+        },
+        scale: {
+            value: windParameters.scale,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: setParam('grassParameters', 'windScale'),
-        },
-        wStrength: {
-            value: grassParameters.windStrength,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            onChange: setParam('grassParameters', 'windStrength'),
-        },
-        wSpeed: {
-            value: grassParameters.windSpeed,
-            min: 0,
-            max: 2,
-            step: 0.01,
-            onChange: setParam('grassParameters', 'windSpeed'),
+            onChange: setParam('windParameters', 'scale'),
         },
     })
 
@@ -443,7 +457,7 @@ export default function Controls() {
             value: treeParameters.trunkColorB,
             onChange: setParam('treeParameters', 'trunkColorB'),
         },
-        
+
         angleMax: {
             value: treeParameters.boneAngleMax,
             min: 0.0,

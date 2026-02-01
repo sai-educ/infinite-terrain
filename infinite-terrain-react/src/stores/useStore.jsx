@@ -69,9 +69,6 @@ const useStore = create(
             height: 1.15,
             leanFactor: 0.2,
             sobelMode: 2.0,
-            windScale: 0.35,
-            windStrength: 0.7,
-            windSpeed: 1.0,
 
             // Procedural flowers (small blossom at the tip of some blades)
             flowersEnabled: true,
@@ -85,6 +82,16 @@ const useStore = create(
             flowerColorB: '#ffcc00', // yellow
             flowerColorC: '#ff73be', // pink
             flowerColorD: '#6e8dff', // blue-ish
+        },
+
+        /**
+         * Wind parameters (global)
+         */
+        windParameters: {
+            direction: 0.6, // radians, used for grass sway direction in XZ
+            strength: 0.7,
+            speed: 1.0,
+            scale: 0.35,
         },
 
         /**
@@ -135,17 +142,17 @@ const useStore = create(
             bushFresnelStrength: 0.25, //0.10
             bushFresnelColor: '#ffcc00', //#005cff //#00e2ff //#894185 //#ce1ac5 //#6c6bd8 //#a6ff00 //ffc900 //#8987ff //#84cd27
 
-            bushAlphaTest: 0.90,
+            bushAlphaTest: 0.9,
 
             // Tree bone wind controls (Leva)
-            boneAngleMax: 0.18, // radians
-            boneSpeedMul: 1.67,
+            boneAngleMax: 0.25, // radians
+            boneSpeedMul: 1.59,
             boneNoiseStrength: 0.34,
             boneNoiseScale: 0.5,
             boneNoiseSpeed: 0.35,
-            boneXFactor: 0.35,
-            boneZFactor: 0.10,
-            boneParentInfluence: 0.12, // 0 = each bone independent, 1 = fully follows parent sway
+            boneXFactor: 0.3,
+            boneZFactor: 0.3,
+            boneParentInfluence: 0.37, // 0 = each bone independent, 1 = fully follows parent sway
         },
 
         /**
@@ -158,7 +165,7 @@ const useStore = create(
         /**
          * Performance & Debug parameters
          */
-        perfVisible: false,
+        perfVisible: true,
         setPerfVisible: (visible) => {
             set({ perfVisible: visible })
         },

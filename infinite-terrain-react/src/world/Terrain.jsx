@@ -1,22 +1,30 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useTexture } from '@react-three/drei'
+import { useTexture, useGLTF } from '@react-three/drei'
 import { createNoise2D } from 'simplex-noise'
-import * as THREE from 'three'
 import { gsap } from 'gsap'
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
+import * as THREE from 'three'
 
 import TerrainChunk from './TerrainChunk.jsx'
 import useStore from '../stores/useStore.jsx'
 import usePhases, { PHASES } from '../stores/usePhases.jsx'
 import { mulberry32 } from './utils/randomUtils.js'
 
-import noiseTextureURL from '/textures/noiseTexture.png'
+import noiseTextureUrl from '/textures/noiseTexture.png'
+import alphaLeavesUrl from '../assets/textures/alpha_leaves.png'
+import treeUrl from '../assets/models/tree.glb'
+
 import terrainVertexShader from '../shaders/terrain/vertex.glsl'
 import terrainFragmentShader from '../shaders/terrain/fragment.glsl'
 import grassVertexShader from '../shaders/grass/vertex.glsl'
 import grassFragmentShader from '../shaders/grass/fragment.glsl'
 import stonesVertexShader from '../shaders/stones/vertex.glsl'
 import stonesFragmentShader from '../shaders/stones/fragment.glsl'
+import bushesVertexShader from '../shaders/leaves/vertex.glsl'
+import bushesFragmentShader from '../shaders/leaves/fragment.glsl'
+import trunkVertexShader from '../shaders/trunk/vertex.glsl'
+import trunkFragmentShader from '../shaders/trunk/fragment.glsl'
 
 const WORLD_NOISE_SEED = 1337
 const sharedNoise2D = createNoise2D(mulberry32(WORLD_NOISE_SEED))
@@ -28,22 +36,24 @@ export default function Terrain() {
     const radiusAnimationRef = useRef(null)
     const prevPhaseRef = useRef(PHASES.loading)
 
+    const phase = usePhases((s) => s.phase)
+
     const chunkSize = useStore((s) => s.terrainParameters.chunkSize)
     const terrainParameters = useStore((s) => s.terrainParameters)
     const borderParameters = useStore((s) => s.borderParameters)
     const grassParameters = useStore((s) => s.grassParameters)
+    const windParameters = useStore((s) => s.windParameters)
     const stoneParameters = useStore((s) => s.stoneParameters)
+    const treeParameters = useStore((s) => s.treeParameters)
     const trailParameters = useStore((s) => s.trailParameters)
     const ditheringParameters = useStore((s) => s.ditheringParameters)
     const setBorderParameters = useStore((s) => s.setBorderParameters)
-    const phase = usePhases((s) => s.phase)
 
-    // Noise generator (stable across parameter changes and remounts)
     const noise2D = sharedNoise2D
 
-    // Noise texture
+    // Textures
     const noiseTexture = useTexture(
-        noiseTextureURL,
+        noiseTextureUrl,
         (texture) => {
             texture.wrapS = THREE.RepeatWrapping
             texture.wrapT = THREE.RepeatWrapping
@@ -51,8 +61,12 @@ export default function Terrain() {
             texture.magFilter = THREE.LinearFilter
             return texture
         },
-        [noiseTextureURL]
+        [noiseTextureUrl]
     )
+    const alphaMap = useTexture(alphaLeavesUrl)
+
+    // Tree model
+    const treeModel = useGLTF(treeUrl)
 
     // Terrain material - shared across all chunks
     const terrainMaterial = useMemo(() => {
@@ -105,9 +119,10 @@ export default function Terrain() {
                     uFlowerColorC: { value: new THREE.Color(grassParameters.flowerColorC) },
                     uFlowerColorD: { value: new THREE.Color(grassParameters.flowerColorD) },
 
-                    uWindScale: { value: grassParameters.windScale },
-                    uWindStrength: { value: grassParameters.windStrength },
-                    uWindSpeed: { value: grassParameters.windSpeed },
+                    uWindDirection: { value: windParameters.direction },
+                    uWindScale: { value: windParameters.scale },
+                    uWindStrength: { value: windParameters.strength },
+                    uWindSpeed: { value: windParameters.speed },
                     uTrailTexture: { value: null },
                     uBallPosition: { value: new THREE.Vector3() },
                     uCircleCenter: { value: new THREE.Vector3() },
@@ -126,10 +141,10 @@ export default function Terrain() {
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters, ditheringParameters]
+        [grassParameters, windParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters, ditheringParameters]
     )
 
-    // Stone material (shader) - shared across all chunks
+    // Stone material - shared across all chunks
     const stoneMaterial = useMemo(() => {
         return new THREE.ShaderMaterial({
             uniforms: {
@@ -159,15 +174,66 @@ export default function Terrain() {
         return new THREE.IcosahedronGeometry(1, 0)
     }, [])
 
-    // Cleanup materials on unmount
+    // Tree leaves material - shared across all trees
+    const leavesMaterial = useMemo(() => {
+        return new CustomShaderMaterial({
+            baseMaterial: THREE.MeshStandardMaterial,
+            uniforms: {
+                uTime: { value: 0 },
+                uWiggleStrength: { value: treeParameters.bushWiggleStrength },
+                uWiggleSpeed: { value: treeParameters.bushWiggleSpeed },
+                uWorldNoiseScale: { value: treeParameters.bushWorldNoiseScale },
+                uUvWiggleScale: { value: treeParameters.bushUvWiggleScale },
+                uNoiseTexture: { value: noiseTexture },
+                uNoiseMix: { value: treeParameters.bushNoiseMix },
+
+                uFresnelPower: { value: treeParameters.bushFresnelPower },
+                uFresnelStrength: { value: treeParameters.bushFresnelStrength },
+                uFresnelColor: { value: new THREE.Color(treeParameters.bushFresnelColor) },
+            },
+            vertexShader: bushesVertexShader,
+            fragmentShader: bushesFragmentShader,
+            color: new THREE.Color(treeParameters.leavesColor),
+            alphaMap: alphaMap,
+            transparent: false,
+            side: THREE.DoubleSide,
+            depthWrite: true,
+            alphaToCoverage: false,
+            alphaTest: treeParameters.bushAlphaTest,
+            roughness: 1.0,
+            metalness: 0.0,
+        })
+    }, [alphaMap, noiseTexture, treeParameters])
+
+    // Tree trunk material - shared across all trees
+    const trunkMaterial = useMemo(() => {
+        return new CustomShaderMaterial({
+            baseMaterial: THREE.MeshStandardMaterial,
+            vertexShader: trunkVertexShader,
+            fragmentShader: trunkFragmentShader,
+            uniforms: {
+                uTrunkColorA: { value: new THREE.Color(treeParameters.trunkColorA ?? '#ffffff') },
+                uTrunkColorB: { value: new THREE.Color(treeParameters.trunkColorB ?? '#000000') },
+            },
+            roughness: 1.0,
+            metalness: 0.0,
+        })
+    }, [treeParameters.trunkColorA, treeParameters.trunkColorB])
+
+    // Cleanup materials and shared assets on unmount
     useEffect(() => {
         return () => {
             terrainMaterial.dispose()
             grassMaterial.dispose()
             stoneMaterial.dispose()
             stoneGeometry.dispose()
+            leavesMaterial.dispose()
+            trunkMaterial.dispose()
+            // Dispose shared textures when the entire terrain is gone
+            noiseTexture.dispose()
+            alphaMap.dispose()
         }
-    }, [terrainMaterial, grassMaterial, stoneMaterial, stoneGeometry])
+    }, [terrainMaterial, grassMaterial, stoneMaterial, stoneGeometry, leavesMaterial, trunkMaterial, noiseTexture, alphaMap])
 
     // Handle radius animation
     const handleRadiusAnimation = () => {
@@ -239,6 +305,11 @@ export default function Terrain() {
         // Update stones uniforms (no rerenders required)
         stoneMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
 
+        // Update tree leaves material uniforms
+        if (leavesMaterial?.uniforms?.uTime) {
+            leavesMaterial.uniforms.uTime.value = clock.elapsedTime
+        }
+
         // Chunk management
         const ballPosition = state.ballPosition
         const safeChunkSize = Math.max(0.0001, chunkSize)
@@ -276,8 +347,13 @@ export default function Terrain() {
                     grassMaterial={grassMaterial}
                     stoneMaterial={stoneMaterial}
                     stoneGeometry={stoneGeometry}
+                    leavesMaterial={leavesMaterial}
+                    trunkMaterial={trunkMaterial}
+                    treeScene={treeModel.scene}
                 />
             ))}
         </group>
     )
 }
+
+useGLTF.preload(treeUrl)
