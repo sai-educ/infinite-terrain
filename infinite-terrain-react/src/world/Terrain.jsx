@@ -51,6 +51,16 @@ export default function Terrain() {
     const trailParameters = useStore((s) => s.trailParameters)
     const ditheringParameters = useStore((s) => s.ditheringParameters)
     const setBorderParameters = useStore((s) => s.setBorderParameters)
+    const terrainScale = terrainParameters.scale
+    const terrainAmplitude = terrainParameters.amplitude
+    const borderNoiseStrength = borderParameters.noiseStrength
+    const borderNoiseScale = borderParameters.noiseScale
+    const borderCircleRadius = borderParameters.circleRadiusFactor
+    const borderGrassFadeOffset = borderParameters.grassFadeOffset
+    const borderGroundOffset = borderParameters.groundOffset
+    const borderGroundFadeOffset = borderParameters.groundFadeOffset
+    const borderTreesMultiplier = borderParameters.borderTreesMultiplier
+    const ditherModeValue = ditheringParameters.ditherMode === 'Bayer' ? 1 : 0
 
     const noise2D = sharedNoise2D
 
@@ -83,20 +93,20 @@ export default function Terrain() {
                 uBaseColor: { value: new THREE.Color(terrainParameters.color) },
                 uCircleCenter: { value: new THREE.Vector3() },
                 uTrailPatchSize: { value: chunkSize },
-                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                uGroundOffset: { value: borderParameters.groundOffset },
-                uGroundFadeOffset: { value: borderParameters.groundFadeOffset },
+                uCircleRadiusFactor: { value: borderCircleRadius },
+                uGrassFadeOffset: { value: borderGrassFadeOffset },
+                uGroundOffset: { value: borderGroundOffset },
+                uGroundFadeOffset: { value: borderGroundFadeOffset },
                 uNoiseTexture: { value: noiseTexture },
-                uNoiseStrength: { value: borderParameters.noiseStrength },
-                uNoiseScale: { value: borderParameters.noiseScale },
+                uNoiseStrength: { value: borderNoiseStrength },
+                uNoiseScale: { value: borderNoiseScale },
                 uPixelSize: { value: ditheringParameters.pixelSize },
-                uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
+                uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [terrainParameters, chunkSize, borderParameters, noiseTexture, ditheringParameters])
+    }, [])
 
     // Grass material - shared across all chunks
     const grassMaterial = useMemo(
@@ -104,7 +114,7 @@ export default function Terrain() {
             new THREE.ShaderMaterial({
                 uniforms: {
                     uPixelSize: { value: ditheringParameters.pixelSize },
-                    uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
+                    uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
                     uTime: { value: 0 },
                     uGrassSegments: { value: grassParameters.segmentsCount },
                     uGrassChunkSize: { value: chunkSize },
@@ -138,18 +148,18 @@ export default function Terrain() {
                     uSobelMode: { value: grassParameters.sobelMode },
 
                     uNoiseTexture: { value: noiseTexture },
-                    uNoiseStrength: { value: borderParameters.noiseStrength },
-                    uNoiseScale: { value: borderParameters.noiseScale },
-                    uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                    uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                    uGroundOffset: { value: borderParameters.groundOffset },
-                    uGroundFadeOffset: { value: borderParameters.groundFadeOffset },
+                    uNoiseStrength: { value: borderNoiseStrength },
+                    uNoiseScale: { value: borderNoiseScale },
+                    uCircleRadiusFactor: { value: borderCircleRadius },
+                    uGrassFadeOffset: { value: borderGrassFadeOffset },
+                    uGroundOffset: { value: borderGroundOffset },
+                    uGroundFadeOffset: { value: borderGroundFadeOffset },
                 },
                 vertexShader: grassVertexShader,
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, windParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters, ditheringParameters]
+        []
     )
 
     // Stone material - shared across all chunks
@@ -157,7 +167,7 @@ export default function Terrain() {
         return new THREE.ShaderMaterial({
             uniforms: {
                 uPixelSize: { value: ditheringParameters.pixelSize },
-                uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
+                uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
 
                 uStoneColor: { value: new THREE.Color(stoneParameters.color) },
 
@@ -165,17 +175,17 @@ export default function Terrain() {
                 uCircleCenter: { value: new THREE.Vector3() },
                 uChunkSize: { value: chunkSize },
                 uNoiseTexture: { value: noiseTexture },
-                uNoiseStrength: { value: borderParameters.noiseStrength },
-                uNoiseScale: { value: borderParameters.noiseScale },
-                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
+                uNoiseStrength: { value: borderNoiseStrength },
+                uNoiseScale: { value: borderNoiseScale },
+                uCircleRadiusFactor: { value: borderCircleRadius },
+                uGrassFadeOffset: { value: borderGrassFadeOffset },
             },
             vertexShader: stonesVertexShader,
             fragmentShader: stonesFragmentShader,
             vertexColors: false,
             side: THREE.FrontSide,
         })
-    }, [stoneParameters.color, chunkSize, noiseTexture, borderParameters, ditheringParameters])
+    }, [])
 
     // Shared stone geometry
     const stoneGeometry = useMemo(() => {
@@ -201,13 +211,13 @@ export default function Terrain() {
 
                 uCircleCenter: { value: new THREE.Vector3() },
                 uChunkSize: { value: chunkSize },
-                uNoiseStrength: { value: borderParameters.noiseStrength },
-                uNoiseScale: { value: borderParameters.noiseScale },
-                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                uBorderTreesMultiplier: { value: borderParameters.borderTreesMultiplier },
+                uNoiseStrength: { value: borderNoiseStrength },
+                uNoiseScale: { value: borderNoiseScale },
+                uCircleRadiusFactor: { value: borderCircleRadius },
+                uGrassFadeOffset: { value: borderGrassFadeOffset },
+                uBorderTreesMultiplier: { value: borderTreesMultiplier },
                 uPixelSize: { value: ditheringParameters.pixelSize },
-                uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
+                uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
             },
             vertexShader: bushesVertexShader,
             fragmentShader: bushesFragmentShader,
@@ -221,7 +231,7 @@ export default function Terrain() {
             roughness: 1.0,
             metalness: 0.0,
         })
-    }, [alphaMap, noiseTexture, treeParameters, chunkSize, borderParameters, ditheringParameters])
+    }, [])
 
     // Tree trunk material - shared across all trees
     const trunkMaterial = useMemo(() => {
@@ -235,18 +245,200 @@ export default function Terrain() {
                 uCircleCenter: { value: new THREE.Vector3() },
                 uChunkSize: { value: chunkSize },
                 uNoiseTexture: { value: noiseTexture },
-                uNoiseStrength: { value: borderParameters.noiseStrength },
-                uNoiseScale: { value: borderParameters.noiseScale },
-                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                uBorderTreesMultiplier: { value: borderParameters.borderTreesMultiplier },
+                uNoiseStrength: { value: borderNoiseStrength },
+                uNoiseScale: { value: borderNoiseScale },
+                uCircleRadiusFactor: { value: borderCircleRadius },
+                uGrassFadeOffset: { value: borderGrassFadeOffset },
+                uBorderTreesMultiplier: { value: borderTreesMultiplier },
                 uPixelSize: { value: ditheringParameters.pixelSize },
-                uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
+                uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
             },
             roughness: 1.0,
             metalness: 0.0,
         })
-    }, [treeParameters.trunkColorA, treeParameters.trunkColorB, chunkSize, noiseTexture, borderParameters, ditheringParameters])
+    }, [])
+
+    useEffect(() => {
+        const u = terrainMaterial.uniforms
+        u.uBaseColor.value.set(terrainParameters.color)
+        u.uTrailPatchSize.value = chunkSize
+        u.uCircleRadiusFactor.value = borderCircleRadius
+        u.uGrassFadeOffset.value = borderGrassFadeOffset
+        u.uGroundOffset.value = borderGroundOffset
+        u.uGroundFadeOffset.value = borderGroundFadeOffset
+        u.uNoiseTexture.value = noiseTexture
+        u.uNoiseStrength.value = borderNoiseStrength
+        u.uNoiseScale.value = borderNoiseScale
+        u.uPixelSize.value = ditheringParameters.pixelSize
+        u.uDitherMode.value = ditherModeValue
+    }, [
+        terrainMaterial,
+        terrainParameters.color,
+        chunkSize,
+        borderCircleRadius,
+        borderGrassFadeOffset,
+        borderGroundOffset,
+        borderGroundFadeOffset,
+        noiseTexture,
+        borderNoiseStrength,
+        borderNoiseScale,
+        ditheringParameters.pixelSize,
+        ditherModeValue,
+    ])
+
+    useEffect(() => {
+        const u = grassMaterial.uniforms
+        u.uPixelSize.value = ditheringParameters.pixelSize
+        u.uDitherMode.value = ditherModeValue
+        u.uGrassSegments.value = grassParameters.segmentsCount
+        u.uGrassChunkSize.value = chunkSize
+        u.uGrassWidth.value = grassParameters.width
+        u.uGrassHeight.value = grassParameters.height
+        u.uGrassBaseColor.value.set(grassParameters.colorBase)
+        u.uGrassTopColor.value.set(grassParameters.colorTop)
+        u.uLeanFactor.value = grassParameters.leanFactor
+
+        u.uFlowersEnabled.value = grassParameters.flowersEnabled ? 1.0 : 0.0
+        u.uFlowerDensity.value = grassParameters.flowerDensity
+        u.uFlowerNoiseScale.value = grassParameters.flowerNoiseScale
+        u.uFlowerHeightBoost.value = grassParameters.flowerHeightBoost
+        u.uFlowerTipStart.value = grassParameters.flowerTipStart
+        u.uFlowerBaseScale.value = grassParameters.flowerBaseScale
+        u.uFlowerExpand.value = grassParameters.flowerExpand
+        u.uFlowerColorA.value.set(grassParameters.flowerColorA)
+        u.uFlowerColorB.value.set(grassParameters.flowerColorB)
+        u.uFlowerColorC.value.set(grassParameters.flowerColorC)
+        u.uFlowerColorD.value.set(grassParameters.flowerColorD)
+
+        u.uWindDirection.value = windParameters.direction
+        u.uWindScale.value = windParameters.scale
+        u.uWindStrength.value = windParameters.strength
+        u.uWindSpeed.value = windParameters.speed
+        u.uTrailCanvasSize.value = trailParameters.chunkSize
+        u.uSobelMode.value = grassParameters.sobelMode
+
+        u.uNoiseTexture.value = noiseTexture
+        u.uNoiseStrength.value = borderNoiseStrength
+        u.uNoiseScale.value = borderNoiseScale
+        u.uCircleRadiusFactor.value = borderCircleRadius
+        u.uGrassFadeOffset.value = borderGrassFadeOffset
+        u.uGroundOffset.value = borderGroundOffset
+        u.uGroundFadeOffset.value = borderGroundFadeOffset
+    }, [
+        grassMaterial,
+        grassParameters,
+        windParameters,
+        trailParameters.chunkSize,
+        chunkSize,
+        noiseTexture,
+        borderNoiseStrength,
+        borderNoiseScale,
+        borderCircleRadius,
+        borderGrassFadeOffset,
+        borderGroundOffset,
+        borderGroundFadeOffset,
+        ditheringParameters.pixelSize,
+        ditherModeValue,
+    ])
+
+    useEffect(() => {
+        const u = stoneMaterial.uniforms
+        u.uPixelSize.value = ditheringParameters.pixelSize
+        u.uDitherMode.value = ditherModeValue
+        u.uStoneColor.value.set(stoneParameters.color)
+        u.uChunkSize.value = chunkSize
+        u.uNoiseTexture.value = noiseTexture
+        u.uNoiseStrength.value = borderNoiseStrength
+        u.uNoiseScale.value = borderNoiseScale
+        u.uCircleRadiusFactor.value = borderCircleRadius
+        u.uGrassFadeOffset.value = borderGrassFadeOffset
+    }, [
+        stoneMaterial,
+        stoneParameters.color,
+        chunkSize,
+        noiseTexture,
+        borderNoiseStrength,
+        borderNoiseScale,
+        borderCircleRadius,
+        borderGrassFadeOffset,
+        ditheringParameters.pixelSize,
+        ditherModeValue,
+    ])
+
+    useEffect(() => {
+        const u = leavesMaterial.uniforms
+        u.uWiggleStrength.value = treeParameters.bushWiggleStrength
+        u.uWiggleSpeed.value = treeParameters.bushWiggleSpeed
+        u.uWorldNoiseScale.value = treeParameters.bushWorldNoiseScale
+        u.uUvWiggleScale.value = treeParameters.bushUvWiggleScale
+        u.uNoiseTexture.value = noiseTexture
+        u.uNoiseMix.value = treeParameters.bushNoiseMix
+
+        u.uFresnelPower.value = treeParameters.bushFresnelPower
+        u.uFresnelStrength.value = treeParameters.bushFresnelStrength
+        u.uFresnelColor.value.set(treeParameters.bushFresnelColor)
+
+        u.uChunkSize.value = chunkSize
+        u.uNoiseStrength.value = borderNoiseStrength
+        u.uNoiseScale.value = borderNoiseScale
+        u.uCircleRadiusFactor.value = borderCircleRadius
+        u.uGrassFadeOffset.value = borderGrassFadeOffset
+        u.uBorderTreesMultiplier.value = borderTreesMultiplier
+        u.uPixelSize.value = ditheringParameters.pixelSize
+        u.uDitherMode.value = ditherModeValue
+
+        leavesMaterial.color.set(treeParameters.leavesColor)
+
+        if (leavesMaterial.alphaMap !== alphaMap) {
+            leavesMaterial.alphaMap = alphaMap
+            leavesMaterial.needsUpdate = true
+        }
+        if (leavesMaterial.alphaTest !== treeParameters.bushAlphaTest) {
+            leavesMaterial.alphaTest = treeParameters.bushAlphaTest
+            leavesMaterial.needsUpdate = true
+        }
+    }, [
+        leavesMaterial,
+        treeParameters,
+        chunkSize,
+        noiseTexture,
+        alphaMap,
+        borderNoiseStrength,
+        borderNoiseScale,
+        borderCircleRadius,
+        borderGrassFadeOffset,
+        borderTreesMultiplier,
+        ditheringParameters.pixelSize,
+        ditherModeValue,
+    ])
+
+    useEffect(() => {
+        const u = trunkMaterial.uniforms
+        u.uTrunkColorA.value.set(treeParameters.trunkColorA ?? '#ffffff')
+        u.uTrunkColorB.value.set(treeParameters.trunkColorB ?? '#000000')
+        u.uChunkSize.value = chunkSize
+        u.uNoiseTexture.value = noiseTexture
+        u.uNoiseStrength.value = borderNoiseStrength
+        u.uNoiseScale.value = borderNoiseScale
+        u.uCircleRadiusFactor.value = borderCircleRadius
+        u.uGrassFadeOffset.value = borderGrassFadeOffset
+        u.uBorderTreesMultiplier.value = borderTreesMultiplier
+        u.uPixelSize.value = ditheringParameters.pixelSize
+        u.uDitherMode.value = ditherModeValue
+    }, [
+        trunkMaterial,
+        treeParameters.trunkColorA,
+        treeParameters.trunkColorB,
+        chunkSize,
+        noiseTexture,
+        borderNoiseStrength,
+        borderNoiseScale,
+        borderCircleRadius,
+        borderGrassFadeOffset,
+        borderTreesMultiplier,
+        ditheringParameters.pixelSize,
+        ditherModeValue,
+    ])
 
     // Cleanup materials and shared assets on unmount
     useEffect(() => {
@@ -372,7 +564,7 @@ export default function Terrain() {
 
         const targets = []
         for (const chunk of activeChunks) {
-            const { treeInstances } = generateChunkData(chunk.x, chunk.z, chunkSize, noise2D, stoneParameters, terrainParameters)
+            const { treeInstances } = generateChunkData(chunk.x, chunk.z, chunkSize, noise2D, stoneParameters, { scale: terrainScale, amplitude: terrainAmplitude })
             const originX = chunk.x * chunkSize
             const originZ = chunk.z * chunkSize
 
@@ -388,7 +580,7 @@ export default function Terrain() {
         }
 
         return targets
-    }, [activeChunks, chunkSize, noise2D, stoneParameters, terrainParameters])
+    }, [activeChunks, chunkSize, noise2D, stoneParameters, terrainScale, terrainAmplitude])
 
     const treePoolSlots = useMemo(() => {
         const pool = treePoolStateRef.current

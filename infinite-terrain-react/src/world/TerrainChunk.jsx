@@ -20,6 +20,9 @@ export default function TerrainChunk({
 }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
     const stoneParameters = useStore((s) => s.stoneParameters)
+    const terrainScale = terrainParameters.scale
+    const terrainAmplitude = terrainParameters.amplitude
+    const terrainSegments = terrainParameters.segments
 
     const stonesKey = useMemo(
         () =>
@@ -28,12 +31,11 @@ export default function TerrainChunk({
     )
 
     const { stoneField } = useMemo(() => {
-        return generateChunkData(x, z, size, noise2D, stoneParameters, terrainParameters)
-    }, [x, z, size, noise2D, stoneParameters, terrainParameters])
+        return generateChunkData(x, z, size, noise2D, stoneParameters, { scale: terrainScale, amplitude: terrainAmplitude })
+    }, [x, z, size, noise2D, stoneParameters, terrainScale, terrainAmplitude])
 
     const geometry = useMemo(() => {
-        const { segments, scale, amplitude } = terrainParameters
-        const geo = new THREE.PlaneGeometry(size, size, segments, segments)
+        const geo = new THREE.PlaneGeometry(size, size, terrainSegments, terrainSegments)
         const posAttribute = geo.attributes.position
         const chunkWorldX = x * size
         const chunkWorldZ = z * size
@@ -41,10 +43,10 @@ export default function TerrainChunk({
         for (let i = 0; i < posAttribute.count; i++) {
             const worldX = posAttribute.getX(i) + chunkWorldX
             const worldZ = -posAttribute.getY(i) + chunkWorldZ
-            posAttribute.setZ(i, noise2D(worldX * scale, worldZ * scale) * amplitude)
+            posAttribute.setZ(i, noise2D(worldX * terrainScale, worldZ * terrainScale) * terrainAmplitude)
         }
         return geo
-    }, [noise2D, size, x, z, terrainParameters])
+    }, [noise2D, size, x, z, terrainScale, terrainAmplitude, terrainSegments])
 
     useEffect(() => () => geometry.dispose(), [geometry])
 
@@ -62,8 +64,8 @@ export default function TerrainChunk({
                 chunkIndexZ={z}
                 noise2D={noise2D}
                 noiseTexture={noiseTexture}
-                scale={terrainParameters.scale}
-                amplitude={terrainParameters.amplitude}
+                scale={terrainScale}
+                amplitude={terrainAmplitude}
                 stones={stoneField.stones}
                 grassMaterial={grassMaterial}
             />

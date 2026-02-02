@@ -100,9 +100,9 @@ const useStore = create(
          */
         stoneParameters: {
             enabled: true,
-            count: 10, // per chunk
-            minScale: 0.4,
-            maxScale: 1.2,
+            count: 3, // per chunk
+            minScale: 0.7,
+            maxScale: 1.4,
             yOffset: 0.02,
             color: '#adadad', //#707e89
             noiseScale: 0.15,
@@ -128,7 +128,7 @@ const useStore = create(
          * Tree parameters
          */
         treeParameters: {
-            leavesColor: '#cb3e0b', //#701a13 //#c14b30 //#141f3b //#2956c7 //#de2d0d //#175803 //a04009 //#33156c //#204a11
+            leavesColor: '#cb3e0b', //#701a13 //#c14b30 //#141f3b //#2956c7 //#de2d0d //#175803 //a04009 //#33156c //#204a11 //#0a6ecc
             trunkColorA: '#ffffff',
             trunkColorB: '#000000',
 
@@ -141,7 +141,7 @@ const useStore = create(
 
             bushFresnelPower: 1.83, //2.64
             bushFresnelStrength: 0.25, //0.10
-            bushFresnelColor: '#ffcc00', //#005cff //#00e2ff //#894185 //#ce1ac5 //#6c6bd8 //#a6ff00 //ffc900 //#8987ff //#84cd27
+            bushFresnelColor: '#ffcc00', //#005cff //#00e2ff //#894185 //#ce1ac5 //#6c6bd8 //#a6ff00 //ffc900 //#8987ff //#84cd27 //#cc00ff
 
             bushAlphaTest: 0.9,
 

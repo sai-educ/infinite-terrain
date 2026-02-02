@@ -324,7 +324,7 @@ export default function Controls() {
         count: {
             value: stoneParameters.count,
             min: 0,
-            max: 500,
+            max: 10,
             step: 1,
             onChange: setParam('stoneParameters', 'count'),
         },
