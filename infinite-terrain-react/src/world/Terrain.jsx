@@ -49,6 +49,7 @@ export default function Terrain() {
     const stoneParameters = useStore((s) => s.stoneParameters)
     const treeParameters = useStore((s) => s.treeParameters)
     const trailParameters = useStore((s) => s.trailParameters)
+    const ballFadeParameters = useStore((s) => s.ballFadeParameters)
     const ditheringParameters = useStore((s) => s.ditheringParameters)
     const setBorderParameters = useStore((s) => s.setBorderParameters)
     const terrainScale = terrainParameters.scale
@@ -61,6 +62,11 @@ export default function Terrain() {
     const borderGroundFadeOffset = borderParameters.groundFadeOffset
     const borderTreesMultiplier = borderParameters.borderTreesMultiplier
     const ditherModeValue = ditheringParameters.ditherMode === 'Bayer' ? 1 : 0
+    const ballFadeRadius = ballFadeParameters.radius
+    const ballFadeWidth = ballFadeParameters.width
+    const ballFadeNoiseScale = ballFadeParameters.noiseScale
+    const ballFadeNoiseStrength = ballFadeParameters.noiseStrength
+    const ballFadeMax = ballFadeParameters.maxFade
 
     const noise2D = sharedNoise2D
 
@@ -216,6 +222,12 @@ export default function Terrain() {
                 uCircleRadiusFactor: { value: borderCircleRadius },
                 uGrassFadeOffset: { value: borderGrassFadeOffset },
                 uBorderTreesMultiplier: { value: borderTreesMultiplier },
+                uBallPosition: { value: new THREE.Vector3() },
+                uBallFadeRadius: { value: ballFadeRadius },
+                uBallFadeWidth: { value: ballFadeWidth },
+                uBallNoiseScale: { value: ballFadeNoiseScale },
+                uBallNoiseStrength: { value: ballFadeNoiseStrength },
+                uBallFadeMax: { value: ballFadeMax },
                 uPixelSize: { value: ditheringParameters.pixelSize },
                 uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
             },
@@ -250,6 +262,12 @@ export default function Terrain() {
                 uCircleRadiusFactor: { value: borderCircleRadius },
                 uGrassFadeOffset: { value: borderGrassFadeOffset },
                 uBorderTreesMultiplier: { value: borderTreesMultiplier },
+                uBallPosition: { value: new THREE.Vector3() },
+                uBallFadeRadius: { value: ballFadeRadius },
+                uBallFadeWidth: { value: ballFadeWidth },
+                uBallNoiseScale: { value: ballFadeNoiseScale },
+                uBallNoiseStrength: { value: ballFadeNoiseStrength },
+                uBallFadeMax: { value: ballFadeMax },
                 uPixelSize: { value: ditheringParameters.pixelSize },
                 uDitherMode: { value: ditherModeValue }, // 0: Diamond, 1: Bayer
             },
@@ -384,6 +402,11 @@ export default function Terrain() {
         u.uCircleRadiusFactor.value = borderCircleRadius
         u.uGrassFadeOffset.value = borderGrassFadeOffset
         u.uBorderTreesMultiplier.value = borderTreesMultiplier
+        u.uBallFadeRadius.value = ballFadeRadius
+        u.uBallFadeWidth.value = ballFadeWidth
+        u.uBallNoiseScale.value = ballFadeNoiseScale
+        u.uBallNoiseStrength.value = ballFadeNoiseStrength
+        u.uBallFadeMax.value = ballFadeMax
         u.uPixelSize.value = ditheringParameters.pixelSize
         u.uDitherMode.value = ditherModeValue
 
@@ -408,6 +431,11 @@ export default function Terrain() {
         borderCircleRadius,
         borderGrassFadeOffset,
         borderTreesMultiplier,
+        ballFadeRadius,
+        ballFadeWidth,
+        ballFadeNoiseScale,
+        ballFadeNoiseStrength,
+        ballFadeMax,
         ditheringParameters.pixelSize,
         ditherModeValue,
     ])
@@ -423,6 +451,11 @@ export default function Terrain() {
         u.uCircleRadiusFactor.value = borderCircleRadius
         u.uGrassFadeOffset.value = borderGrassFadeOffset
         u.uBorderTreesMultiplier.value = borderTreesMultiplier
+        u.uBallFadeRadius.value = ballFadeRadius
+        u.uBallFadeWidth.value = ballFadeWidth
+        u.uBallNoiseScale.value = ballFadeNoiseScale
+        u.uBallNoiseStrength.value = ballFadeNoiseStrength
+        u.uBallFadeMax.value = ballFadeMax
         u.uPixelSize.value = ditheringParameters.pixelSize
         u.uDitherMode.value = ditherModeValue
     }, [
@@ -436,6 +469,11 @@ export default function Terrain() {
         borderCircleRadius,
         borderGrassFadeOffset,
         borderTreesMultiplier,
+        ballFadeRadius,
+        ballFadeWidth,
+        ballFadeNoiseScale,
+        ballFadeNoiseStrength,
+        ballFadeMax,
         ditheringParameters.pixelSize,
         ditherModeValue,
     ])
@@ -532,8 +570,14 @@ export default function Terrain() {
         if (leavesMaterial?.uniforms?.uCircleCenter) {
             leavesMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
         }
+        if (leavesMaterial?.uniforms?.uBallPosition) {
+            leavesMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
+        }
         if (trunkMaterial?.uniforms?.uCircleCenter) {
             trunkMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+        }
+        if (trunkMaterial?.uniforms?.uBallPosition) {
+            trunkMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
         }
 
         // Chunk management

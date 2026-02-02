@@ -164,6 +164,17 @@ const useStore = create(
         },
 
         /**
+         * Ball fade (see-through) parameters
+         */
+        ballFadeParameters: {
+            radius: 2.53,
+            width: 0.92,
+            noiseScale: 0.3,
+            noiseStrength: 0.71,
+            maxFade: 0.7,
+        },
+
+        /**
          * Performance & Debug parameters
          */
         perfVisible: true,

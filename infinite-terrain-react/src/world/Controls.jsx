@@ -11,6 +11,7 @@ export default function Controls() {
     const treeParameters = useStore((state) => state.treeParameters)
     const trailParameters = useStore((state) => state.trailParameters)
     const ballParameters = useStore((state) => state.ballParameters)
+    const ballFadeParameters = useStore((state) => state.ballFadeParameters)
     const perfVisible = useStore((state) => state.perfVisible)
     const physicsDebug = useStore((state) => state.physicsDebug)
     const backgroundWireframe = useStore((state) => state.backgroundWireframe)
@@ -566,6 +567,47 @@ export default function Controls() {
         color: {
             value: ballParameters.color,
             onChange: setParam('ballParameters', 'color'),
+        },
+    })
+
+    /**
+     * Ball fade parameters
+     */
+    useControls('BallFade', {
+        radius: {
+            value: ballFadeParameters.radius,
+            min: 0.1,
+            max: 4.0,
+            step: 0.01,
+            onChange: setParam('ballFadeParameters', 'radius'),
+        },
+        width: {
+            value: ballFadeParameters.width,
+            min: 0.0,
+            max: 2.0,
+            step: 0.01,
+            onChange: setParam('ballFadeParameters', 'width'),
+        },
+        noiseScale: {
+            value: ballFadeParameters.noiseScale,
+            min: 0.0,
+            max: 1.0,
+            step: 0.001,
+            onChange: setParam('ballFadeParameters', 'noiseScale'),
+        },
+        noiseStrength: {
+            value: ballFadeParameters.noiseStrength,
+            min: 0.0,
+            max: 2.0,
+            step: 0.01,
+            onChange: setParam('ballFadeParameters', 'noiseStrength'),
+        },
+        maxFade: {
+            value: ballFadeParameters.maxFade,
+            min: 0.0,
+            max: 1.0,
+            step: 0.01,
+            onChange: setParam('ballFadeParameters', 'maxFade'),
         },
     })
 

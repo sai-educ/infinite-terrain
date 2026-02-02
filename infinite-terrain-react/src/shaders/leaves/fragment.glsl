@@ -9,6 +9,12 @@ uniform float uNoiseScale;
 uniform float uCircleRadiusFactor;
 uniform float uGrassFadeOffset;
 uniform float uBorderTreesMultiplier;
+uniform vec3 uBallPosition;
+uniform float uBallFadeRadius;
+uniform float uBallFadeWidth;
+uniform float uBallNoiseScale;
+uniform float uBallNoiseStrength;
+uniform float uBallFadeMax;
 uniform float uPixelSize;
 uniform int uDitherMode;
 
@@ -54,6 +60,27 @@ bool shouldDiscard(vec2 fragCoord, float pixelSize, float fadeLevel, int mode) {
     return threshold < fadeLevel;
 }
 
+float getBallFade(vec3 worldPos) {
+  vec3 camPos = cameraPosition;
+  vec3 camToBall = uBallPosition - camPos;
+  float len = length(camToBall);
+  if (len < 1e-4) return 0.0;
+  vec3 dir = camToBall / len;
+
+  float t = dot(worldPos - camPos, dir);
+  if (t <= 0.0 || t >= len) return 0.0;
+
+  vec3 closest = camPos + dir * t;
+  float dist = length(worldPos - closest);
+  float scale = t / len;
+  float noiseValue = texture2D(uNoiseTexture, worldPos.xz * uBallNoiseScale).r;
+  float noiseOffset = (noiseValue * 2.0 - 1.0) * uBallNoiseStrength;
+  float radius = max(0.05, uBallFadeRadius * scale * (1.0 + noiseOffset));
+  float width = uBallFadeWidth * scale;
+  float inner = max(0.0, radius - width);
+  return 1.0 - smoothstep(inner, radius, dist);
+}
+
 void main() {
   csm_FragNormal = normalize(vNormal);
 
@@ -77,11 +104,13 @@ void main() {
   float radius = uChunkSize * uCircleRadiusFactor * (1.0 + noiseOffset);
   float fadeMask = 1.0 - smoothstep(radius - uGrassFadeOffset, radius, distToCircle);
 
-  if (fadeMask < 0.99) {
-      float fade = 1.0 - fadeMask;
+  float borderFade = 1.0 - fadeMask;
+  float ballFade = getBallFade(vWorldPosition) * uBallFadeMax;
+  float fade = max(borderFade, ballFade);
+
+  if (fade > 0.0) {
       if (shouldDiscard(gl_FragCoord.xy, uPixelSize, fade, uDitherMode)) {
           discard;
       }
   }
 }
-
