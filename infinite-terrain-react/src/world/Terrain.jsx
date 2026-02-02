@@ -7,9 +7,11 @@ import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import * as THREE from 'three'
 
 import TerrainChunk from './TerrainChunk.jsx'
+import { Tree } from './Tree.jsx'
 import useStore from '../stores/useStore.jsx'
 import usePhases, { PHASES } from '../stores/usePhases.jsx'
 import { mulberry32 } from './utils/randomUtils.js'
+import { generateChunkData } from './utils/chunkUtils.js'
 
 import noiseTextureUrl from '/textures/noiseTexture.png'
 import alphaLeavesUrl from '../assets/textures/alpha_leaves.png'
@@ -28,6 +30,7 @@ import trunkFragmentShader from '../shaders/trunk/fragment.glsl'
 
 const WORLD_NOISE_SEED = 1337
 const sharedNoise2D = createNoise2D(mulberry32(WORLD_NOISE_SEED))
+const TREE_POOL_SIZE = 18
 
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
@@ -50,6 +53,11 @@ export default function Terrain() {
     const setBorderParameters = useStore((s) => s.setBorderParameters)
 
     const noise2D = sharedNoise2D
+
+    const treePoolStateRef = useRef({
+        slots: Array.from({ length: TREE_POOL_SIZE }, () => ({ id: null, data: null })),
+        map: new Map(),
+    })
 
     // Textures
     const noiseTexture = useTexture(
@@ -359,6 +367,56 @@ export default function Terrain() {
         }
     })
 
+    const treeTargets = useMemo(() => {
+        if (!activeChunks || activeChunks.length === 0) return []
+
+        const targets = []
+        for (const chunk of activeChunks) {
+            const { treeInstances } = generateChunkData(chunk.x, chunk.z, chunkSize, noise2D, stoneParameters, terrainParameters)
+            const originX = chunk.x * chunkSize
+            const originZ = chunk.z * chunkSize
+
+            for (const t of treeInstances) {
+                targets.push({
+                    id: t.id,
+                    seed: t.seed,
+                    position: [t.position[0] + originX, t.position[1], t.position[2] + originZ],
+                    rotation: t.rotation,
+                    scale: t.scale,
+                })
+            }
+        }
+
+        return targets
+    }, [activeChunks, chunkSize, noise2D, stoneParameters, terrainParameters])
+
+    const treePoolSlots = useMemo(() => {
+        const pool = treePoolStateRef.current
+        const nextIds = new Set(treeTargets.map((t) => t.id))
+
+        for (let i = 0; i < pool.slots.length; i++) {
+            const slot = pool.slots[i]
+            if (slot.id && !nextIds.has(slot.id)) {
+                pool.map.delete(slot.id)
+                slot.id = null
+                slot.data = null
+            }
+        }
+
+        for (const target of treeTargets) {
+            let slotIndex = pool.map.get(target.id)
+            if (slotIndex === undefined) {
+                slotIndex = pool.slots.findIndex((s) => s.id === null)
+                if (slotIndex === -1) continue
+                pool.map.set(target.id, slotIndex)
+                pool.slots[slotIndex].id = target.id
+            }
+            pool.slots[slotIndex].data = target
+        }
+
+        return pool.slots.map((slot) => slot.data)
+    }, [treeTargets])
+
     return (
         <group>
             {activeChunks.map((chunk) => (
@@ -373,11 +431,29 @@ export default function Terrain() {
                     grassMaterial={grassMaterial}
                     stoneMaterial={stoneMaterial}
                     stoneGeometry={stoneGeometry}
-                    leavesMaterial={leavesMaterial}
-                    trunkMaterial={trunkMaterial}
-                    treeScene={treeModel.scene}
                 />
             ))}
+            {treePoolSlots.map((tree, index) => {
+                const visible = Boolean(tree)
+                const position = tree?.position ?? [0, -9999, 0]
+                const rotation = tree?.rotation ?? [0, 0, 0]
+                const scale = tree?.scale ?? 1
+                const seed = tree?.seed ?? 0
+
+                return (
+                    <Tree
+                        key={`tree-pool-${index}`}
+                        position={position}
+                        rotation={rotation}
+                        scale={scale}
+                        seed={seed}
+                        visible={visible}
+                        leavesMaterial={leavesMaterial}
+                        trunkMaterial={trunkMaterial}
+                        treeScene={treeModel.scene}
+                    />
+                )
+            })}
         </group>
     )
 }

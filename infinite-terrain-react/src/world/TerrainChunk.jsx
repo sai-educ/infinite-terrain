@@ -4,7 +4,6 @@ import * as THREE from 'three'
 
 import Grass from './Grass.jsx'
 import Stones from './Stones.jsx'
-import Trees from './Trees.jsx'
 import useStore from '../stores/useStore.jsx'
 import { generateChunkData } from './utils/chunkUtils.js'
 
@@ -18,9 +17,6 @@ export default function TerrainChunk({
     grassMaterial,
     stoneMaterial,
     stoneGeometry,
-    leavesMaterial,
-    trunkMaterial,
-    treeScene,
 }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
     const stoneParameters = useStore((s) => s.stoneParameters)
@@ -31,7 +27,7 @@ export default function TerrainChunk({
         [x, z, stoneParameters.count, stoneParameters.minScale, stoneParameters.maxScale, stoneParameters.yOffset, stoneParameters.noiseScale, stoneParameters.noiseThreshold]
     )
 
-    const { stoneField, treeInstances } = useMemo(() => {
+    const { stoneField } = useMemo(() => {
         return generateChunkData(x, z, size, noise2D, stoneParameters, terrainParameters)
     }, [x, z, size, noise2D, stoneParameters, terrainParameters])
 
@@ -74,7 +70,6 @@ export default function TerrainChunk({
 
             <Stones key={stonesKey} stones={stoneField.currentStones} maxCount={stoneField.capacity} stoneMaterial={stoneMaterial} stoneGeometry={stoneGeometry} />
 
-            <Trees trees={treeInstances} leavesMaterial={leavesMaterial} trunkMaterial={trunkMaterial} treeScene={treeScene} />
         </group>
     )
 }
