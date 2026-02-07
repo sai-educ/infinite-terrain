@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture, useGLTF } from '@react-three/drei'
-import { createNoise2D } from 'simplex-noise'
+import { sharedNoise2D } from './utils/worldNoise.js'
 import { gsap } from 'gsap'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import * as THREE from 'three'
@@ -10,7 +10,6 @@ import TerrainChunk from './TerrainChunk.jsx'
 import { Tree } from './Tree.jsx'
 import useStore from '../stores/useStore.jsx'
 import usePhases, { PHASES } from '../stores/usePhases.jsx'
-import { mulberry32 } from './utils/randomUtils.js'
 import { generateChunkData } from './utils/chunkUtils.js'
 
 import noiseTextureUrl from '/textures/noiseTexture.png'
@@ -28,8 +27,6 @@ import bushesFragmentShader from '../shaders/leaves/fragment.glsl'
 import trunkVertexShader from '../shaders/trunk/vertex.glsl'
 import trunkFragmentShader from '../shaders/trunk/fragment.glsl'
 
-const WORLD_NOISE_SEED = 1337
-const sharedNoise2D = createNoise2D(mulberry32(WORLD_NOISE_SEED))
 const TREE_POOL_SIZE = 18
 
 export default function Terrain() {

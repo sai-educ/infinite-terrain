@@ -11,9 +11,7 @@ import trunkData from './data/trunks.json'
 
 const TREE_BONE_WIND_SEED = 90210
 const treeBoneNoise2D = createNoise2D(mulberry32(TREE_BONE_WIND_SEED))
-const TRUNK_ENTRIES = Object.entries(trunkData)
-const TRUNK_NAMES = TRUNK_ENTRIES.map(([name]) => name)
-const TRUNK_NAME_SET = new Set(TRUNK_NAMES)
+const TRUNK_NAMES = Object.keys(trunkData)
 
 function hashStringTo01(str) {
     // deterministic [0,1)
@@ -28,12 +26,7 @@ function hashStringTo01(str) {
 export function Tree(props) {
     if (!props.treeScene) return null
 
-    const clonedScene = useMemo(() => {
-        if (!props.treeScene) return null
-        return SkeletonUtils.clone(props.treeScene)
-    }, [props.treeScene])
-
-    if (!clonedScene) return null
+    const clonedScene = useMemo(() => SkeletonUtils.clone(props.treeScene), [props.treeScene])
     const nodes = useMemo(() => {
         const nodes = {}
         clonedScene.traverse((obj) => {
@@ -54,69 +47,35 @@ export function Tree(props) {
         pos: new THREE.Vector3(),
         quat: new THREE.Quaternion(),
     })
+    const treeScale = (props.scale ?? 1) * 1.5
 
     const boneRoot = useMemo(() => {
-        if (nodes?.Bone?.isBone) return nodes.Bone
-        const skeleton = nodes?.trunk?.skeleton
-        if (skeleton?.bones?.length) {
-            const boneSet = new Set(skeleton.bones)
-            const rootBone = skeleton.bones.find((bone) => !bone.parent || !boneSet.has(bone.parent))
-            return rootBone ?? skeleton.bones[0]
-        }
-        let found = null
-        clonedScene?.traverse((obj) => {
-            if (!found && obj.isBone) found = obj
-        })
-        return found
-    }, [nodes, clonedScene])
+        return nodes?.Bone?.isBone ? nodes.Bone : nodes?.trunk?.skeleton?.bones?.[0] ?? null
+    }, [nodes])
 
-    const trunkBoneEntries = useMemo(() => {
+    const trunkEntries = useMemo(() => {
         if (!boneRoot) return []
-        const map = new Map()
-        const bones = []
-        boneRoot.traverse((object) => {
-            if (object.isBone) {
-                bones.push(object)
-                if (TRUNK_NAME_SET.has(object.name)) {
-                    map.set(object.name, object)
-                }
-            }
-        })
         return TRUNK_NAMES.map((name) => {
-            let bone = map.get(name)
-            if (!bone) {
-                bone = bones.find((b) => b.name === name || b.name.startsWith(name) || b.name.includes(name))
-            }
+            const bone = boneRoot.getObjectByName(name)
             if (!bone) return null
             const data = trunkData?.[name]
-            const scale = data?.scale ?? [1, 1, 1]
-            return { name, bone, scale }
+            return { name, bone, scale: data?.scale ?? [1, 1, 1] }
         }).filter(Boolean)
     }, [boneRoot])
 
     const trunkInstances = useMemo(() => {
-        const treeScale = (props.scale ?? 1) * 1.5
-        return trunkBoneEntries.map((entry) => ({
+        return trunkEntries.map((entry) => ({
             key: entry.name,
             position: [0, 0, 0],
             rotation: [0, 0, 0],
             scale: [entry.scale[0] * treeScale, entry.scale[1] * treeScale, entry.scale[2] * treeScale],
         }))
-    }, [trunkBoneEntries, props.scale])
+    }, [trunkEntries, treeScale])
 
     const trunkColliderGeometry = useMemo(() => {
-        const direct = nodes?.trunk_01
-        if (direct && (direct.isMesh || direct.isSkinnedMesh) && direct.geometry) {
-            return direct.geometry
-        }
-        let found = null
-        clonedScene?.traverse((obj) => {
-            if (!found && (obj.isMesh || obj.isSkinnedMesh) && obj.name === 'trunk_01' && obj.geometry) {
-                found = obj
-            }
-        })
-        return found?.geometry ?? null
-    }, [nodes, clonedScene])
+        const mesh = nodes?.trunk_collider
+        return mesh && (mesh.isMesh || mesh.isSkinnedMesh) ? mesh.geometry : null
+    }, [nodes])
 
     const colliderMaterial = props.rigidBodyMaterial
 
@@ -219,10 +178,10 @@ export function Tree(props) {
         })
 
         const bodies = trunkBodiesRef.current
-        if (bodies && trunkBoneEntries.length > 0) {
+        if (bodies && trunkEntries.length > 0) {
             const { pos, quat } = trunkTmpRef.current
-            for (let i = 0; i < trunkBoneEntries.length; i++) {
-                const bone = trunkBoneEntries[i]?.bone
+            for (let i = 0; i < trunkEntries.length; i++) {
+                const bone = trunkEntries[i]?.bone
                 const body = bodies[i]
                 if (!bone || !body) continue
                 bone.getWorldPosition(pos)
@@ -237,7 +196,7 @@ export function Tree(props) {
 
     return (
         <>
-            <group {...props} scale={(props.scale ?? 1) * 1.5}>
+            <group {...props} scale={treeScale}>
                 <group ref={innerRef} rotation-y={Math.PI / 2}>
                     <skinnedMesh geometry={nodes.trunk.geometry} material={props.trunkMaterial} skeleton={nodes.trunk.skeleton} dispose={null} />
                     <primitive object={boneRoot} />

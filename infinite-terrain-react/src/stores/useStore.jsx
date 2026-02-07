@@ -2,6 +2,30 @@ import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import * as THREE from 'three'
 
+const THEMES = {
+    dark: {
+        terrain: '#3f5553',
+        background: '#203a3b',
+        grassBase: '#396c18',
+        grassTop: '#77aa1a',
+        ball: '#582ec7',
+        leaves: '#cb3e0b',
+        bushFresnelColor: '#ffcc00',
+    },
+    light: {
+        terrain: '#908343',
+        background: '#9a9065',
+        grassBase: '#669019',
+        grassTop: '#acc125',
+        ball: '#c7442d',
+        leaves: '#204a11',
+        bushFresnelColor: '#84cd27',
+    },
+}
+
+const DEFAULT_THEME = 'light'
+const DEFAULT_COLORS = THEMES[DEFAULT_THEME]
+
 const createStore = () =>
     create(
         subscribeWithSelector((set) => ({
@@ -29,8 +53,8 @@ const createStore = () =>
              * Terrain parameters
              */
             terrainParameters: {
-                color: '#3f5553',
-                backgroundColor: '#203a3b',
+                color: DEFAULT_COLORS.terrain,
+                backgroundColor: DEFAULT_COLORS.background,
                 chunkSize: 10,
                 segments: 16,
                 scale: 0.05,
@@ -41,7 +65,7 @@ const createStore = () =>
             borderParameters: {
                 noiseStrength: 0.45,
                 noiseScale: 0.35,
-                circleRadiusFactor: 0.75,
+                circleRadiusFactor: 0.9,
                 grassFadeOffset: 3.5,
                 groundOffset: -0.75,
                 groundFadeOffset: 1.0,
@@ -63,8 +87,8 @@ const createStore = () =>
              * Grass parameters
              */
             grassParameters: {
-                colorBase: '#396c18',
-                colorTop: '#77aa1a',
+                colorBase: DEFAULT_COLORS.grassBase,
+                colorTop: DEFAULT_COLORS.grassTop,
                 count: 2500,
                 segmentsCount: 4,
                 width: 0.15,
@@ -129,7 +153,7 @@ const createStore = () =>
              * Tree parameters
              */
             treeParameters: {
-                leavesColor: '#cb3e0b', //#701a13 //#c14b30 //#141f3b //#2956c7 //#de2d0d //#175803 //a04009 //#33156c //#204a11 //#0a6ecc
+                leavesColor: DEFAULT_COLORS.leaves, //#701a13 //#c14b30 //#141f3b //#2956c7 //#de2d0d //#175803 //a04009 //#33156c //#204a11 //#0a6ecc
                 trunkColorA: '#ffffff',
                 trunkColorB: '#000000',
 
@@ -142,7 +166,7 @@ const createStore = () =>
 
                 bushFresnelPower: 1.83, //2.64
                 bushFresnelStrength: 0.25, //0.10
-                bushFresnelColor: '#ffcc00', //#005cff //#00e2ff //#894185 //#ce1ac5 //#6c6bd8 //#a6ff00 //ffc900 //#8987ff //#84cd27 //#cc00ff
+                bushFresnelColor: DEFAULT_COLORS.bushFresnelColor, //#005cff //#00e2ff //#894185 //#ce1ac5 //#6c6bd8 //#a6ff00 //ffc900 //#8987ff //#84cd27 //#cc00ff
 
                 bushAlphaTest: 0.9,
 
@@ -161,7 +185,7 @@ const createStore = () =>
              * Ball parameters
              */
             ballParameters: {
-                color: '#582ec7', // Changed from red to purple/blue-ish by default
+                color: DEFAULT_COLORS.ball, // Changed from red to purple/blue-ish by default
             },
 
             /**
@@ -196,30 +220,9 @@ const createStore = () =>
             /**
              * Theme
              */
-            theme: 'dark', // Set default theme to 'dark'
+            theme: DEFAULT_THEME, // Set default theme
             setTheme: (theme) => {
-                const themes = {
-                    dark: {
-                        terrain: '#3f5553',
-                        background: '#203a3b',
-                        grassBase: '#396c18',
-                        grassTop: '#77aa1a',
-                        ball: '#582ec7',
-                        leaves: '#cb3e0b',
-                        bushFresnelColor: '#ffcc00',
-                    },
-                    light: {
-                        terrain: '#908343',
-                        background: '#9a9065',
-                        grassBase: '#669019',
-                        grassTop: '#acc125',
-                        ball: '#c7442d',
-                        leaves: '#204a11',
-                        bushFresnelColor: '#84cd27',
-                    },
-                }
-
-                const colors = themes[theme]
+                const colors = THEMES[theme] ?? DEFAULT_COLORS
 
                 set((state) => ({
                     theme,
