@@ -36,7 +36,7 @@ root.render(
             >
                 <Experience />
             </Canvas>
-            <Leva collapsed={false} />
+            <Leva collapsed />
         </KeyboardControls>
         <Loader />
         <ThemeSwitcher />
