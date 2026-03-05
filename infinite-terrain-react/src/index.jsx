@@ -5,7 +5,6 @@ import Experience from './world/Experience.jsx'
 import { KeyboardControls } from '@react-three/drei'
 import { Leva } from 'leva'
 import Loader from './loader/Loader.jsx'
-import ControlsIcons from './ui/ControlsIcons.jsx'
 import ThemeSwitcher from './ui/ThemeSwitcher.jsx'
 
 const root = ReactDOM.createRoot(document.querySelector('#root'))
@@ -38,7 +37,6 @@ root.render(
                 <Experience />
             </Canvas>
             <Leva collapsed={false} />
-            <ControlsIcons />
         </KeyboardControls>
         <Loader />
         <ThemeSwitcher />
