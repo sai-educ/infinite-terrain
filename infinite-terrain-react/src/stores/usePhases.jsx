@@ -7,7 +7,7 @@ export const PHASES = {
 }
 
 const usePhases = create((set) => ({
-    phase: PHASES.loading,
+    phase: PHASES.start,
     setPhase: (phase) => set({ phase }),
     resetPhase: () => set({ phase: PHASES.loading }),
 }))

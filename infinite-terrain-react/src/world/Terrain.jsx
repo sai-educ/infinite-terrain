@@ -2,7 +2,6 @@ import { useState, useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import { sharedNoise2D } from './utils/worldNoise.js'
-import { gsap } from 'gsap'
 import * as THREE from 'three'
 
 import TerrainChunk from './TerrainChunk.jsx'
@@ -13,23 +12,21 @@ import useStonesMaterial from '../materials/StonesMaterial.jsx'
 import useTreeMaterial from '../materials/TreeMaterial.jsx'
 import useWindMaterial from '../materials/WindMaterial.jsx'
 import useStore from '../stores/useStore.jsx'
-import usePhases, { PHASES } from '../stores/usePhases.jsx'
 
 import noiseTextureUrl from '../assets/textures/noiseTexture.png'
 import alphaLeavesUrl from '../assets/textures/alpha_leaves.png'
 
-const START_CIRCLE_RADIUS = 0.07
-const START_RADIUS_DELAY = 1.1
+const START_CIRCLE_RADIUS = 100.0
+const VISIBLE_CHUNK_RADIUS = 6 // 13x13 chunks (~19x the old 3x3 visible area)
+const MAX_REVEAL_RADIUS_FACTOR = VISIBLE_CHUNK_RADIUS + 0.3
 
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
 
     const currentChunk = useRef({ x: 0, z: 0 })
-    const radiusAnimationRef = useRef(null)
-    const prevPhaseRef = useRef(PHASES.loading)
     const circleRadiusRef = useRef(START_CIRCLE_RADIUS)
-
-    const phase = usePhases((s) => s.phase)
+    const circleCenterRef = useRef(new THREE.Vector3(0, 0, 0))
+    const cameraDirectionRef = useRef(new THREE.Vector3(0, -1, 0))
 
     const chunkSize = useStore((s) => s.terrainParameters.chunkSize)
     const terrainScale = useStore((s) => s.terrainParameters.scale)
@@ -125,10 +122,6 @@ export default function Terrain() {
 
     useEffect(() => {
         return () => {
-            if (radiusAnimationRef.current) {
-                radiusAnimationRef.current.kill()
-                radiusAnimationRef.current = null
-            }
             stoneGeometry.dispose()
             rigidBodyMaterial.dispose()
             noiseTexture.dispose()
@@ -137,80 +130,62 @@ export default function Terrain() {
     }, [stoneGeometry, rigidBodyMaterial, noiseTexture, alphaMap])
 
     useEffect(() => {
-        const wasStarted = prevPhaseRef.current === PHASES.start
+        setCircleRadius(THREE.MathUtils.clamp(borderCircleRadius, 1.0, MAX_REVEAL_RADIUS_FACTOR))
+    }, [borderCircleRadius])
 
-        if (phase === PHASES.start) {
-            if (!wasStarted) {
-                const targetRadius = borderCircleRadius
-                const startRadius = START_CIRCLE_RADIUS
-
-                if (radiusAnimationRef.current) {
-                    radiusAnimationRef.current.kill()
-                    radiusAnimationRef.current = null
-                }
-
-                setCircleRadius(startRadius)
-
-                const radiusObj = { value: startRadius }
-                radiusAnimationRef.current = gsap.to(radiusObj, {
-                    value: targetRadius,
-                    duration: 2.0,
-                    delay: START_RADIUS_DELAY,
-                    ease: 'power2.out',
-                    onUpdate: () => {
-                        setCircleRadius(radiusObj.value)
-                    },
-                    onComplete: () => {
-                        radiusAnimationRef.current = null
-                    },
-                })
-            } else if (!radiusAnimationRef.current) {
-                setCircleRadius(borderCircleRadius)
-            }
-        } else if (!radiusAnimationRef.current) {
-            setCircleRadius(START_CIRCLE_RADIUS)
-        }
-
-        prevPhaseRef.current = phase
-    }, [phase, borderCircleRadius])
-
-    useFrame(({ clock }) => {
+    useFrame(({ clock, camera }) => {
         const state = useStore.getState()
+        const cameraDirection = cameraDirectionRef.current
+        camera.getWorldDirection(cameraDirection)
+
+        const circleCenter = circleCenterRef.current
+        const denom = cameraDirection.y
+        if (Math.abs(denom) > 1e-4) {
+            const t = -camera.position.y / denom
+            if (t > 0) {
+                circleCenter.copy(camera.position).addScaledVector(cameraDirection, t)
+            } else {
+                circleCenter.set(camera.position.x, 0, camera.position.z)
+            }
+        } else {
+            circleCenter.set(camera.position.x, 0, camera.position.z)
+        }
+        circleCenter.y = 0
+
         // Update terrain material uniforms
-        terrainMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+        terrainMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
 
         // Update grass material uniforms
         grassMaterial.uniforms.uTime.value = clock.elapsedTime
         grassMaterial.uniforms.uTrailTexture.value = state.trailTexture
         grassMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
-        grassMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+        grassMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
 
         // Update stones uniforms (no rerenders required)
-        stoneMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+        stoneMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
 
         // Update tree material uniforms
         if (treesEnabled && treeMaterial.uniforms) {
             treeMaterial.uniforms.uTime.value = clock.elapsedTime
-            treeMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+            treeMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
             treeMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
         }
 
         // Update wind uniforms
         windMaterial.uniforms.uTime.value = clock.elapsedTime
-        windMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
+        windMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
 
         // Chunk management
-        const ballPosition = state.ballPosition
         const safeChunkSize = Math.max(0.0001, chunkSize)
-        const chunkX = Math.round(ballPosition.x / safeChunkSize)
-        const chunkZ = Math.round(ballPosition.z / safeChunkSize)
+        const chunkX = Math.round(circleCenter.x / safeChunkSize)
+        const chunkZ = Math.round(circleCenter.z / safeChunkSize)
 
         if (chunkX !== currentChunk.current.x || chunkZ !== currentChunk.current.z || currentChunk.current.size !== safeChunkSize || activeChunks.length === 0) {
             currentChunk.current = { x: chunkX, z: chunkZ, size: safeChunkSize }
 
             const newChunks = []
-            for (let x = -1; x <= 1; x++) {
-                for (let z = -1; z <= 1; z++) {
+            for (let x = -VISIBLE_CHUNK_RADIUS; x <= VISIBLE_CHUNK_RADIUS; x++) {
+                for (let z = -VISIBLE_CHUNK_RADIUS; z <= VISIBLE_CHUNK_RADIUS; z++) {
                     newChunks.push({
                         x: chunkX + x,
                         z: chunkZ + z,

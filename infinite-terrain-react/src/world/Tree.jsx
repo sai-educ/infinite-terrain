@@ -11,6 +11,7 @@ import trunkData from './data/trunks.json'
 const TREE_BONE_WIND_SEED = 90210
 const treeBoneNoise2D = createNoise2D(mulberry32(TREE_BONE_WIND_SEED))
 const TRUNK_NAMES = Object.keys(trunkData)
+const ENABLE_TREE_COLLIDERS = false
 
 function hashStringTo01(str) {
     // deterministic [0,1)
@@ -56,6 +57,7 @@ export function Tree(props) {
     }, [nodes])
 
     const trunkEntries = useMemo(() => {
+        if (!ENABLE_TREE_COLLIDERS) return []
         if (!boneRoot) return []
         return TRUNK_NAMES.map((name) => {
             const bone = boneRoot.getObjectByName(name)
@@ -66,6 +68,7 @@ export function Tree(props) {
     }, [boneRoot])
 
     const trunkInstances = useMemo(() => {
+        if (!ENABLE_TREE_COLLIDERS) return []
         return trunkEntries.map((entry) => ({
             key: entry.name,
             position: [0, 0, 0],
@@ -75,6 +78,7 @@ export function Tree(props) {
     }, [trunkEntries, treeScale])
 
     const trunkColliderGeometry = useMemo(() => {
+        if (!ENABLE_TREE_COLLIDERS) return null
         const mesh = nodes?.trunk_collider
         return mesh && (mesh.isMesh || mesh.isSkinnedMesh) ? mesh.geometry : null
     }, [nodes])
@@ -122,7 +126,7 @@ export function Tree(props) {
     }, [clonedScene])
 
     useFrame((state) => {
-        if (!boneRoot) return
+        if (!props.visible || !boneRoot) return
 
         const { speed: windSpeed, strength: windStrength } = windParameters
         const time = state.clock.elapsedTime
@@ -180,7 +184,7 @@ export function Tree(props) {
         })
 
         const bodies = trunkBodiesRef.current
-        if (bodies && trunkEntries.length > 0) {
+        if (ENABLE_TREE_COLLIDERS && bodies && trunkEntries.length > 0) {
             const { pos, quat } = trunkTmpRef.current
             for (let i = 0; i < trunkEntries.length; i++) {
                 const bone = trunkEntries[i]?.bone

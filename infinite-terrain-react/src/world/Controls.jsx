@@ -128,8 +128,8 @@ export default function Controls() {
         radius: {
             value: borderParameters.circleRadiusFactor,
             min: 0.1,
-            max: 1.0,
-            step: 0.01,
+            max: 6.5,
+            step: 0.05,
             onChange: setParam('borderParameters', 'circleRadiusFactor'),
         },
         grassFade: {

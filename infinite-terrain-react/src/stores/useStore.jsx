@@ -65,7 +65,7 @@ const createStore = () =>
             borderParameters: {
                 noiseStrength: 0.45,
                 noiseScale: 0.35,
-                circleRadiusFactor: 0.9,
+                circleRadiusFactor: 6.3,
                 grassFadeOffset: 3.5,
                 groundOffset: -0.75,
                 groundFadeOffset: 1.0,
@@ -79,7 +79,7 @@ const createStore = () =>
              * Dithering parameters
              */
             ditheringParameters: {
-                ditherMode: 'Diamond', // 'Diamond' | 'Bayer'
+                ditherMode: 'Bayer', // 'Diamond' | 'Bayer'
                 pixelSize: 1,
             },
 
@@ -89,8 +89,8 @@ const createStore = () =>
             grassParameters: {
                 colorBase: DEFAULT_COLORS.grassBase,
                 colorTop: DEFAULT_COLORS.grassTop,
-                count: 2500,
-                segmentsCount: 4,
+                count: 1500,
+                segmentsCount: 3,
                 width: 0.15,
                 height: 1.15,
                 leanFactor: 0.2,
@@ -115,13 +115,13 @@ const createStore = () =>
              */
             windParameters: {
                 direction: 0.8, // radians, used for grass sway direction in XZ
-                strength: 0.7,
-                speed: 1.0,
+                strength: 0.9,
+                speed: 1.2,
                 scale: 0.35,
             },
 
             windLineParameters: {
-                gridSpacing: 3.0,
+                gridSpacing: 4.0,
                 height: 1.5,
                 heightVariationRange: 2.0,
                 timeMultiplier: 0.04,
@@ -206,7 +206,7 @@ const createStore = () =>
                 width: 0.92,
                 noiseScale: 0.3,
                 noiseStrength: 0.71,
-                maxFade: 0.7,
+                maxFade: 0.0,
             },
 
             /**

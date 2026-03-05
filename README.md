@@ -22,3 +22,8 @@ Main features:
 - Dynamic grass/wind animation
 - Instanced stones and animated trees with wind deformation
 - Runtime tweak controls (Leva) for terrain, vegetation, wind, trail, and visuals
+
+## Attribution
+
+This fork is adapted from the original Infinite Terrain project by [mesqme](https://github.com/mesqme):
+[https://github.com/mesqme/infinite-terrain](https://github.com/mesqme/infinite-terrain)

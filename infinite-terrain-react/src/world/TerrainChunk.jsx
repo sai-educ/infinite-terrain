@@ -1,5 +1,4 @@
 import { useMemo, useEffect } from 'react'
-import { RigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 
 import Grass from './Grass.jsx'
@@ -58,9 +57,7 @@ export default function TerrainChunk({
 
     return (
         <group position={[x * size, 0, z * size]}>
-            <RigidBody type="fixed" colliders="trimesh" userData={{ name: 'terrain' }}>
-                <mesh geometry={geometry} material={terrainMaterial} rotation-x={-Math.PI / 2} />
-            </RigidBody>
+            <mesh geometry={geometry} material={terrainMaterial} rotation-x={-Math.PI / 2} />
 
             <Grass
                 size={size}

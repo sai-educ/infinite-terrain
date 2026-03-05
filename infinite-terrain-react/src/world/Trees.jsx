@@ -5,7 +5,7 @@ import { Tree } from './Tree.jsx'
 import { generateChunkData } from './utils/chunkUtils.js'
 import treeUrl from '../assets/models/tree.glb'
 
-const TREE_POOL_SIZE = 18
+const TREE_POOL_SIZE = 180
 
 export default function Trees({ activeChunks, chunkSize, noise2D, stoneParameters, terrainScale, terrainAmplitude, treeMaterial, rigidBodyMaterial }) {
     const treeModel = useGLTF(treeUrl)

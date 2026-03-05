@@ -5,7 +5,6 @@ import Experience from './world/Experience.jsx'
 import { KeyboardControls } from '@react-three/drei'
 import { Leva } from 'leva'
 import Loader from './loader/Loader.jsx'
-import Links from './ui/Links.jsx'
 import ControlsIcons from './ui/ControlsIcons.jsx'
 import ThemeSwitcher from './ui/ThemeSwitcher.jsx'
 
@@ -24,21 +23,24 @@ root.render(
             ]}
         >
             <Canvas
-                dpr={[1, 2]}
+                dpr={[1, 1.5]}
+                gl={{
+                    antialias: true,
+                    powerPreference: 'high-performance',
+                }}
                 camera={{
-                    fov: 45,
+                    fov: 50,
                     near: 0.1,
-                    far: 200,
-                    position: [0, 10, 12],
+                    far: 1000,
+                    position: [0, 55, 70],
                 }}
             >
                 <Experience />
             </Canvas>
-            <Leva collapsed />
+            <Leva collapsed={false} />
             <ControlsIcons />
         </KeyboardControls>
         <Loader />
-        <Links />
         <ThemeSwitcher />
     </>
 )
