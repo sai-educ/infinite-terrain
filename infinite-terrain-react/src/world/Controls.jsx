@@ -4,6 +4,7 @@ import useStore from '../stores/useStore.jsx'
 export default function Controls() {
     const terrainParameters = useStore((state) => state.terrainParameters)
     const borderParameters = useStore((state) => state.borderParameters)
+    const oceanParameters = useStore((state) => state.oceanParameters)
     const ditheringParameters = useStore((state) => state.ditheringParameters)
     const grassParameters = useStore((state) => state.grassParameters)
     const windParameters = useStore((state) => state.windParameters)
@@ -157,6 +158,73 @@ export default function Controls() {
             max: 2.0,
             step: 0.01,
             onChange: setParam('borderParameters', 'borderTreesMultiplier'),
+        },
+    })
+
+    /**
+     * Ocean / island parameters
+     */
+    useControls('Ocean', {
+        enabled: {
+            value: oceanParameters.enabled,
+            onChange: setParam('oceanParameters', 'enabled'),
+        },
+        waterLevel: {
+            value: oceanParameters.level,
+            min: -20,
+            max: 20,
+            step: 0.1,
+            onChange: setParam('oceanParameters', 'level'),
+        },
+        landElevation: {
+            value: oceanParameters.landElevation,
+            min: 0,
+            max: 30,
+            step: 0.1,
+            onChange: setParam('oceanParameters', 'landElevation'),
+        },
+        oceanSize: {
+            value: oceanParameters.size,
+            min: 100,
+            max: 6000,
+            step: 10,
+            onChange: setParam('oceanParameters', 'size'),
+        },
+        waveSize: {
+            value: oceanParameters.waveSize,
+            min: 0.1,
+            max: 12.0,
+            step: 0.1,
+            onChange: setParam('oceanParameters', 'waveSize'),
+        },
+        waveSpeed: {
+            value: oceanParameters.waveSpeed,
+            min: 0.0,
+            max: 5.0,
+            step: 0.01,
+            onChange: setParam('oceanParameters', 'waveSpeed'),
+        },
+        distortionScale: {
+            value: oceanParameters.distortionScale,
+            min: 0.0,
+            max: 12.0,
+            step: 0.01,
+            onChange: setParam('oceanParameters', 'distortionScale'),
+        },
+        alpha: {
+            value: oceanParameters.alpha,
+            min: 0.0,
+            max: 1.0,
+            step: 0.01,
+            onChange: setParam('oceanParameters', 'alpha'),
+        },
+        waterColor: {
+            value: oceanParameters.waterColor,
+            onChange: setParam('oceanParameters', 'waterColor'),
+        },
+        sunColor: {
+            value: oceanParameters.sunColor,
+            onChange: setParam('oceanParameters', 'sunColor'),
         },
     })
 

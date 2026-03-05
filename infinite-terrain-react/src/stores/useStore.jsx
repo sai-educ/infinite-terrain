@@ -76,6 +76,22 @@ const createStore = () =>
             },
 
             /**
+             * Ocean / island parameters
+             */
+            oceanParameters: {
+                enabled: true,
+                level: 0.8,
+                landElevation: 1.4,
+                size: 2400.0,
+                waveSize: 3.0,
+                waveSpeed: 1.0,
+                distortionScale: 3.5,
+                alpha: 0.92,
+                waterColor: '#2f7aa3',
+                sunColor: '#ffffff',
+            },
+
+            /**
              * Dithering parameters
              */
             ditheringParameters: {

@@ -23,14 +23,14 @@ const MAX_REVEAL_RADIUS_FACTOR = VISIBLE_CHUNK_RADIUS + 0.3
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
 
-    const currentChunk = useRef({ x: 0, z: 0 })
+    const currentChunk = useRef({ x: 0, z: 0, size: 0 })
     const circleRadiusRef = useRef(START_CIRCLE_RADIUS)
     const circleCenterRef = useRef(new THREE.Vector3(0, 0, 0))
-    const cameraDirectionRef = useRef(new THREE.Vector3(0, -1, 0))
 
     const chunkSize = useStore((s) => s.terrainParameters.chunkSize)
     const terrainScale = useStore((s) => s.terrainParameters.scale)
     const terrainAmplitude = useStore((s) => s.terrainParameters.amplitude)
+    const landElevation = useStore((s) => s.oceanParameters.landElevation)
     const borderCircleRadius = useStore((s) => s.borderParameters.circleRadiusFactor)
     const windParameters = useStore((s) => s.windParameters)
     const windLineParameters = useStore((s) => s.windLineParameters)
@@ -133,24 +133,11 @@ export default function Terrain() {
         setCircleRadius(THREE.MathUtils.clamp(borderCircleRadius, 1.0, MAX_REVEAL_RADIUS_FACTOR))
     }, [borderCircleRadius])
 
-    useFrame(({ clock, camera }) => {
+    useFrame(({ clock }) => {
         const state = useStore.getState()
-        const cameraDirection = cameraDirectionRef.current
-        camera.getWorldDirection(cameraDirection)
-
         const circleCenter = circleCenterRef.current
-        const denom = cameraDirection.y
-        if (Math.abs(denom) > 1e-4) {
-            const t = -camera.position.y / denom
-            if (t > 0) {
-                circleCenter.copy(camera.position).addScaledVector(cameraDirection, t)
-            } else {
-                circleCenter.set(camera.position.x, 0, camera.position.z)
-            }
-        } else {
-            circleCenter.set(camera.position.x, 0, camera.position.z)
-        }
-        circleCenter.y = 0
+        circleCenter.set(0, landElevation, 0)
+        circleCenter.y = landElevation
 
         // Update terrain material uniforms
         terrainMaterial.uniforms.uCircleCenter.value.copy(circleCenter)
@@ -177,8 +164,8 @@ export default function Terrain() {
 
         // Chunk management
         const safeChunkSize = Math.max(0.0001, chunkSize)
-        const chunkX = Math.round(circleCenter.x / safeChunkSize)
-        const chunkZ = Math.round(circleCenter.z / safeChunkSize)
+        const chunkX = 0
+        const chunkZ = 0
 
         if (chunkX !== currentChunk.current.x || chunkZ !== currentChunk.current.z || currentChunk.current.size !== safeChunkSize || activeChunks.length === 0) {
             currentChunk.current = { x: chunkX, z: chunkZ, size: safeChunkSize }
@@ -198,7 +185,7 @@ export default function Terrain() {
     })
 
     return (
-        <group>
+        <group position={[0, landElevation, 0]}>
             {activeChunks.map((chunk) => (
                 <TerrainChunk
                     key={chunk.key}
